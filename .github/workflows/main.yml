@@ -24,6 +24,7 @@ jobs:
 
       - name: Run script
         env:
+          # AICI e cheia: trebuie să mapăm EXACT numele din GitHub Secrets
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           NEW_NEXTA_BOT: ${{ secrets.NEW_NEXTA_BOT }}
