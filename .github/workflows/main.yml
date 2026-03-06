@@ -27,5 +27,5 @@ jobs:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           NEW_NEXTA_BOT: ${{ secrets.NEW_NEXTA_BOT }}
-          NEXTALIVEROMANIA: ${{ secrets.NEXTALIVEROMANIA }}
+          NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
         run: python nexta_cloud_robot.py
