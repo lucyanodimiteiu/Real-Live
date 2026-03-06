@@ -7,7 +7,7 @@ from deep_translator import GoogleTranslator
 # Preluăm secretele din GitHub
 api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
-session_string = os.getenv('TELEGRAM_SESSION') # Aceasta este cheia proaspăt adăugată de tine
+session_string = os.getenv('TELEGRAM_SESSION') 
 
 CANAL_SURSA = 'nexta_live'
 CANAL_DESTINATIE = '@NextaLiveRomania'
@@ -36,8 +36,8 @@ async def main():
             if msg.text:
                 text_tradus = translator.translate(msg.text)
                 
-                # Postăm textul tradus + media originală pe canalul tău
-                await client.send_message(CANAL_DESTINATIE, text=text_tradus, file=msg.media)
+                # AICI ESTE CORECTURA: am schimbat text= cu message=
+                await client.send_message(CANAL_DESTINATIE, message=text_tradus, file=msg.media)
                 print("✅ Știre tradusă și postată cu succes!")
                 
                 await asyncio.sleep(5) # Pauză scurtă între postări
