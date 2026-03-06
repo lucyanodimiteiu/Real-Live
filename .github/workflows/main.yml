@@ -1,8 +1,8 @@
-name: Rulati botul Telegram
+name: Run Telegram Bot
 
 on:
   push:
-    branches: [ principal ]
+    branches: [ main ]
   workflow_dispatch: 
 
 jobs:
@@ -24,9 +24,8 @@ jobs:
 
       - name: Run script
         env:
-          # Am mapat numele exact din imaginea ta de GitHub Secrets
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           NEW_NEXTA_BOT: ${{ secrets.NEW_NEXTA_BOT }}
-          NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
+          NEXTALIVEROMANIA: ${{ secrets.NEXTALIVEROMANIA }}
         run: python nexta_cloud_robot.py
