@@ -1,9 +1,16 @@
-name: Run Telegram Bot
+name: Automatizare Nexta Live Romania - Audio
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch: 
+  schedule:
+    - cron: '*/20 * * * *'
+
+# Regula care oprește dublarea roboților
+concurrency:
+  group: scraping-nexta
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -17,10 +24,15 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install dependencies
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install telethon deep-translator
+          pip install telethon deep-translator gTTS
 
       - name: Run script
         env:
