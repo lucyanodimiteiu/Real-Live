@@ -27,4 +27,5 @@ jobs:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
         run: python nexta_cloud_robot.py
