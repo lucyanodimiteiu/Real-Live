@@ -10,7 +10,7 @@ api_hash = os.getenv('API_HASH')
 session_string = os.getenv('TELEGRAM_SESSION') 
 
 CANAL_SURSA = 'nexta_live'
-CANAL_DESTINATIE = '@NextaLiveRomania'
+CANAL_DESTINATIE = '@NextaLiveRomania_id'
 
 async def main():
     if not api_id or not api_hash or not session_string:
