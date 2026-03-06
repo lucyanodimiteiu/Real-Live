@@ -1,31 +1,30 @@
-name: Run Telegram Bot
+import os
+import asyncio
+from telethon import TelegramClient
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch: 
+# Citim datele din GitHub Secrets
+api_id = os.getenv('API_ID')
+api_hash = os.getenv('API_HASH')
+bot_token = os.getenv('NEW_NEXTA_BOT')
+session_name = os.getenv('NEXTALIVEROMANIA')
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+async def main():
+    # Verificăm dacă toate secretele sunt prezente
+    if not all([api_id, api_hash, bot_token, session_name]):
+        print("Eroare: Lipsesc secretele din setările GitHub!")
+        return
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+    # Inițializăm clientul NEXTALIVEROMANIA
+    client = TelegramClient(session_name, int(api_id), api_hash)
+    
+    await client.start(bot_token=bot_token)
+    print(f"Bot-ul a pornit cu succes sub sesiunea: {session_name}")
+    
+    me = await client.get_me()
+    print(f"Logat ca: {me.username}")
+    
+    # Menține bot-ul activ
+    await client.run_until_disconnected()
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install telethon
-
-      - name: Run script
-        env:
-          API_ID: ${{ secrets.API_ID }}
-          API_HASH: ${{ secrets.API_HASH }}
-          NEW_NEXTA_BOT: ${{ secrets.NEW_NEXTA_BOT }}
-          NEXTALIVEROMANIA: ${{ secrets.NEXTALIVEROMANIA }}
-        run: python nexta_cloud_robot.py
+if __name__ == '__main__':
+    asyncio.run(main())
