@@ -2,20 +2,23 @@ import os
 import asyncio
 from telethon import TelegramClient
 
-# Preluam variabilele folosind numele corectate
 api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
 bot_token = os.getenv('NEW_NEXTA_BOT')
-session_name = os.getenv('NEXTALIVEROMANIA_ID') # Aici am adaugat _ID
+session_name = os.getenv('NEXTALIVEROMANIA')
 
 async def main():
-    # Verificare rapida
-    if not all([api_id, api_hash, bot_token, session_name]):
-        print("EROARE: Unul dintre secrete lipseste!")
-        print(f"Status: API_ID:{'OK' if api_id else 'LIPSA'}, SESSION:{'OK' if session_name else 'LIPSA'}")
+    print("--- RAPORT SECRETE GITHUB ---")
+    print(f"API_ID: {'✅ PREZENT' if api_id else '❌ LIPSA'}")
+    print(f"API_HASH: {'✅ PREZENT' if api_hash else '❌ LIPSA'}")
+    print(f"NEW_NEXTA_BOT: {'✅ PREZENT' if bot_token else '❌ LIPSA'}")
+    print(f"NEXTALIVEROMANIA: {'✅ PREZENT' if session_name else '❌ LIPSA'}")
+    print("-----------------------------")
+
+    if not api_id or not api_hash or not bot_token or not session_name:
+        print("Eroare: Scriptul se opreste pentru ca lipseste un secret de mai sus.")
         return
 
-    # Pornim clientul
     client = TelegramClient(session_name, int(api_id), api_hash)
     
     await client.start(bot_token=bot_token)
