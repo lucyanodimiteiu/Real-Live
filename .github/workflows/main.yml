@@ -32,7 +32,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install telethon deep-translator gTTS
+          pip install telethon requests
 
       - name: Run script
         env:
@@ -40,4 +40,5 @@ jobs:
           API_HASH: ${{ secrets.API_HASH }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
           NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python nexta_cloud_robot.py
