@@ -74,7 +74,6 @@ async def proceseaza_canal(client, canal_sursa, canal_destinatie, texte_vechi):
     """Scanează mesajele noi și le trimite spre AI și apoi spre canal"""
     print(f"📡 Scanăm sursa: @{canal_sursa}...")
     try:
-        # Luăm ultimele 2 mesaje pentru a evita spam-ul
         messages = await client.get_messages(canal_sursa, limit=2)
         for msg in reversed(messages):
             if not msg.text or len(msg.text) < 10:
@@ -87,7 +86,6 @@ async def proceseaza_canal(client, canal_sursa, canal_destinatie, texte_vechi):
                 continue
 
             # 2. Verificăm dacă știrea e deja pe canal (evităm duplicatele)
-            # Comparăm primele 50 de caractere
             if any(text_final_ai[:50] in (tv or "") for tv in texte_vechi):
                 print(f"⏭️ Știrea de la @{canal_sursa} este deja postată. Skip.")
                 continue
@@ -99,15 +97,13 @@ async def proceseaza_canal(client, canal_sursa, canal_destinatie, texte_vechi):
                 file=msg.media
             )
             print(f"✅ Postat cu succes de la @{canal_sursa}")
-            
-            # Pauză scurtă între postări
             await asyncio.sleep(3)
             
     except Exception as e:
         print(f"❌ Eroare la procesarea @{canal_sursa}: {e}")
 
 async def main():
-    # Verificare Secrete
+    # Diagnosticare Secrete - Verificăm fiecare element în parte
     missing = []
     if not api_id: missing.append("API_ID")
     if not api_hash: missing.append("API_HASH")
@@ -117,9 +113,10 @@ async def main():
 
     if missing:
         print(f"❌ EROARE: Lipsesc următoarele secrete în GitHub: {', '.join(missing)}")
+        print("💡 Verifică Settings -> Secrets -> Actions și asigură-te că numele sunt IDENTICE.")
         return
 
-    # Conversie ID canal dacă e nevoie
+    # Conversie ID canal
     try:
         destinatie = int(canal_destinatie_raw)
     except:
@@ -129,16 +126,16 @@ async def main():
     client = TelegramClient(StringSession(session_string), int(api_id), api_hash)
     await client.connect()
     
-    # Preluăm ultimele 15 mesaje din canalul tău pentru verificarea duplicatelor
+    # Preluăm istoricul pentru a evita duplicatele
     istoric = await client.get_messages(destinatie, limit=15)
     texte_vechi = [m.text for m in istoric if m.text]
 
-    # Procesăm fiecare sursă pe rând
+    # Procesăm lista de canale
     for sursa in CANALE_SURSA:
         await proceseaza_canal(client, sursa, destinatie, texte_vechi)
 
     await client.disconnect()
-    print("🚀 Misiune finalizată. Toate sursele au fost verificate.")
+    print("🚀 Misiune finalizată.")
 
 if __name__ == '__main__':
     asyncio.run(main())
