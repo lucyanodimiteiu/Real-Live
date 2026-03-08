@@ -3,9 +3,13 @@ name: Automatizare Nexta Live Romania - Audio
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: 
+  workflow_dispatch:
   schedule:
-    - cron: '*/20 * * * *'
+    # Rulează la ore fixe: 07:00, 12:00, 17:00, 20:00 UTC
+    - cron: '0 7 * * *'
+    - cron: '0 12 * * *'
+    - cron: '0 17 * * *'
+    - cron: '0 20 * * *'   # Ora 20:00 = declanșează rezumatul zilnic Top 5
 
 concurrency:
   group: scraping-nexta
@@ -14,9 +18,32 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      # ==========================================
+      # Restaurare baza de date SQLite din cache
+      # ==========================================
+      - name: Restore SQLite DB from cache
+        uses: actions/cache@v3
+        with:
+          path: stiri.db
+          key: stiri-db-${{ github.run_id }}
+          restore-keys: |
+            stiri-db-
+
+      # ==========================================
+      # Restaurare log din cache
+      # ==========================================
+      - name: Restore log file from cache
+        uses: actions/cache@v3
+        with:
+          path: bot_log.txt
+          key: bot-log-${{ github.run_id }}
+          restore-keys: |
+            bot-log-
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -40,6 +67,13 @@ jobs:
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
           NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python nexta_cloud_robot.py
+
+      # ==========================================
+      # Afișează ultimele 50 linii din log
+      # ==========================================
+      - name: Show recent logs
+        if: always()
         run: |
-          mkdir -p logs temp
-          python nexta_cloud_robot.py
+          echo "=== ULTIMELE LOG-URI ==="
+          tail -n 50 bot_log.txt || echo "Nu există log încă."
