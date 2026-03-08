@@ -43,7 +43,7 @@ async def genereaza_rezumat_ai(text_original):
     except:
         return text_original
 
-async def proceseaza_canal(client, canal_sursa, canal_destinatie, texte_vechi):
+async def proceseaza_canal(client, canal_sursa, destinatie, texte_vechi):
     print(f"📡 Scan: @{canal_sursa}...")
     try:
         messages = await client.get_messages(canal_sursa, limit=2)
@@ -51,21 +51,39 @@ async def proceseaza_canal(client, canal_sursa, canal_destinatie, texte_vechi):
             if not msg.text or len(msg.text) < 10: continue
             text_final = await genereaza_rezumat_ai(msg.text)
             if any(text_final[:50] in (tv or "") for tv in texte_vechi): continue
-            await client.send_message(canal_destinatie, message=f"{text_final}\n\n{SEMNATURA_NOASTRA}", file=msg.media)
+            
+            # Trimitem mesajul către destinația corectată
+            await client.send_message(destinatie, message=f"{text_final}\n\n{SEMNATURA_NOASTRA}", file=msg.media)
+            print(f"✅ Postat succes de la @{canal_sursa}")
             await asyncio.sleep(2)
     except Exception as e:
         print(f"Error @{canal_sursa}: {e}")
 
 async def main():
+    # REPARARE LOGICĂ ID
     if not all([api_id, api_hash, session_string, DEEPSEEK_KEY]):
         print("EROARE: Lipsesc secretele!")
         return
+
+    # Forțăm transformarea ID-ului în număr întreg (integer)
+    try:
+        if str(canal_destinatie_raw).startswith('-100'):
+            destinatie = int(canal_destinatie_raw)
+        else:
+            destinatie = canal_destinatie_raw
+    except:
+        destinatie = canal_destinatie_raw
+
     client = TelegramClient(StringSession(session_string), int(api_id), api_hash)
     await client.connect()
-    istoric = await client.get_messages(canal_destinatie_raw, limit=15)
+    
+    # Verificăm istoricul folosind ID-ul convertit corect
+    istoric = await client.get_messages(destinatie, limit=15)
     texte_vechi = [m.text for m in istoric if m.text]
+    
     for sursa in CANALE_SURSA:
-        await proceseaza_canal(client, sursa, canal_destinatie_raw, texte_vechi)
+        await proceseaza_canal(client, sursa, destinatie, texte_vechi)
+    
     await client.disconnect()
 
 if __name__ == '__main__':
