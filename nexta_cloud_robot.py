@@ -16,7 +16,7 @@ from telethon.sessions import StringSession
 api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
 session_string = os.getenv('TELEGRAM_SESSION')
-DEEPSEEK_KEY = os.getenv('DEEPSEEK_API_KEY')
+DEEPSEEK_KEY = os.getenv('DEEPSEEK_API_KY')
 
 try:
     canal_destinatie = int(os.getenv('NEXTALIVEROMANIA_ID'))
