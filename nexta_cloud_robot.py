@@ -514,7 +514,7 @@ class NextaPipeline:
                 logging.error(f"Failed processing {source}: {e}")
                 continue
         
-        logging.info("🏁 Pipeline complete")
+        logging.info("🏁 nexta_cloud_robot.py")
 
 # ==========================================
 # ENTRY POINT
@@ -525,7 +525,7 @@ def setup_logging():
         level=logging.INFO,
         format='%(asctime)s | %(levelname)-8s | %(message)s',
         handlers=[
-            logging.FileHandler('logs/pipeline.log', encoding='utf-8'),
+            logging.FileHandler('logs/nexta_cloud_robot.py.log', encoding='utf-8'),
             logging.StreamHandler()
         ]
     )
@@ -545,10 +545,10 @@ def main():
         raise
     
     async def run_pipeline():
-        async with NextaPipeline(config) as pipeline:
-            await pipeline.run()
+        async with nexta_cloud_robot.py(config) as pipeline:
+            await nexta_cloud_robot.py.run()
     
-    asyncio.run(run_pipeline())
+    asyncio.run(run_nexta_cloud_robot.py())
 
 if __name__ == '__main__':
     main()
