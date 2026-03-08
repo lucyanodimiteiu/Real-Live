@@ -1,109 +1,45 @@
-name: Nexta Live OSINT Pipeline v2.0
+name: Automatizare Nexta Live Romania - Audio
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/**'
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Mod simulare (fără postare)'
-        required: false
-        default: 'false'
-      target_channel:
-        description: 'Canal țintă override'
-        required: false
+    branches: [ main ]
+  workflow_dispatch: 
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/20 * * * *'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
-env:
-  PYTHON_VERSION: '3.11'
-  POETRY_VERSION: '1.7.1'
+  group: scraping-nexta
+  cancel-in-progress: true
 
 jobs:
-  osint-pipeline:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
-    
-    outputs:
-      posts_created: ${{ steps.run.outputs.posts_count }}
-      api_cost_usd: ${{ steps.run.outputs.estimated_cost }}
-    
     steps:
-      - name: Checkout cu cache
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Cache Tesseract models
-        uses: actions/cache@v3
-        with:
-          path: /usr/share/tesseract-ocr
-          key: tesseract-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
-
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: '3.9'
 
-      - name: Install system dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng tesseract-ocr-rus tesseract-ocr-heb tesseract-ocr-ukr
+          sudo apt-get install -y ffmpeg tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng tesseract-ocr-rus tesseract-ocr-heb
 
-      - name: Install Python dependencies
+      - name: Install Python Dependencies
         run: |
-          pip install --upgrade pip
-          pip install telethon requests pytesseract Pillow aiohttp aiofiles scikit-learn numpy sentry-sdk
+          python -m pip install --upgrade pip
+          pip install telethon requests pytesseract Pillow
 
-      - name: Health Check API-uri externe
-        id: health
-        run: |
-          python -c "
-          import requests, sys
-          endpoints = [
-              ('https://api.deepseek.com/v1/models', 'DeepSeek'),
-              ('https://api.telegram.org', 'Telegram')
-          ]
-          for url, name in endpoints:
-              try:
-                  r = requests.get(url, timeout=10)
-                  print(f'✅ {name}: {r.status_code}')
-              except Exception as e:
-                  print(f'❌ {name}: {e}')
-                  sys.exit(1)
-          "
-
-      - name: Run OSINT Pipeline
-        id: run
+      - name: Run script
         env:
-          NEXTA_API_ID: ${{ secrets.API_ID }}
-          NEXTA_API_HASH: ${{ secrets.API_HASH }}
-          NEXTA_SESSION: ${{ secrets.TELEGRAM_SESSION }}
-          NEXTA_DEST_ID: ${{ github.event.inputs.target_channel || secrets.NEXTALIVEROMANIA_ID }}
-          DEEPSEEK_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           mkdir -p logs temp
-          python src/pipeline.py
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pipeline-logs-${{ github.run_id }}
-          path: |
-            logs/
-            metrics.json
-          retention-days: 7
-
-      - name: Cleanup temp files
-        if: always()
-        run: |
-          rm -rf temp/
+          python nexta_cloud_robot.py
