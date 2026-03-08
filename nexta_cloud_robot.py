@@ -12,7 +12,7 @@ api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
 session_string = os.getenv('TELEGRAM_SESSION')
 canal_destinatie_raw = os.getenv('NEXTALIVEROMANIA_ID')
-DEEPSEEK_KEY = os.getenv(' DEEPSEEK_API_KEY')
+DEEPSEEK_KEY = os.getenv('DEEPSEEK_API_KEY')
 
 # ==========================================
 # SURSE OSINT & MILITARE
