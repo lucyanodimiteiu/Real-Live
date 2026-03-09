@@ -1,0 +1,61 @@
+name: 🧹 Cleanup Telegram Channel
+on: workflow_dispatch
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install telethon
+      - name: Run Cleanup Script
+        env:
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
+        run: |
+          cat << 'PYEOF' > clean_channel.py
+          import os, asyncio
+          from telethon import TelegramClient
+          from telethon.sessions import StringSession
+          api_id = os.getenv('API_ID')
+          api_hash = os.getenv('API_HASH')
+          session_string = os.getenv('TELEGRAM_SESSION')
+          try:
+              canal = int(os.getenv('NEXTALIVEROMANIA_ID'))
+          except:
+              canal = os.getenv('NEXTALIVEROMANIA_ID')
+          async def main():
+              print("🚀 Start Curatenie Chirurgicala...")
+              client = TelegramClient(StringSession(session_string), int(api_id), api_hash)
+              await client.connect()
+              texte_unice = {}
+              mesaje_de_sters = []
+              total = 0
+              async for msg in client.iter_messages(canal, limit=500):
+                  total += 1
+                  if not msg.text: continue
+                  text_baza = msg.text.replace('🔴', '').replace('🟠', '').replace('🟡', '').replace('@real_live_by_luci', '').strip()
+                  amprenta = text_baza[:100].lower()
+                  if len(amprenta) < 10: continue
+                  if amprenta in texte_unice:
+                      mesaje_de_sters.append(msg.id)
+                      print(f"🗑️ Duplicat gasit ID {msg.id}: {amprenta[:40]}...")
+                  else:
+                      texte_unice[amprenta] = msg.id
+              print(f"📊 Scanate: {total} | Duplicate identificate: {len(mesaje_de_sters)}")
+              if mesaje_de_sters:
+                  print("⏳ Initiere stergere...")
+                  for i in range(0, len(mesaje_de_sters), 100):
+                      await client.delete_messages(canal, mesaje_de_sters[i:i+100])
+                      await asyncio.sleep(2)
+                  print("✅ Curatenie Finalizata!")
+              else:
+                  print("✨ Canalul este curat. Zero dubluri.")
+              await client.disconnect()
+          asyncio.run(main())
+          PYEOF
+          python clean_channel.py
