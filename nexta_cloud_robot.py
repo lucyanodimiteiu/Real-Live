@@ -137,13 +137,17 @@ TEXT IMAGINE: {sursa_img_text[:300]}
     return None
 
 # ==========================================
-# REZUMAT ZILNIC (08:00 și 20:00)
+# REZUMAT ZILNIC (08:00 și 20:00 - Ora Locală Olanda/CET)
 # ==========================================
 async def verifica_si_trimite_rezumat(client):
-    ora = datetime.utcnow().hour
-    # Fortam trimiterea ACUM pentru ora 20:00, ignorand ora curenta pentru primul test
-    # Pe viitor se va rula automat la 06:00 UTC (08:00 RO) si 18:00 UTC (20:00 RO)
+    import pytz
+    tz_olanda = pytz.timezone('Europe/Amsterdam')
+    ora = datetime.now(tz_olanda).hour
     
+    # Rulam la 08:00 (dimineata) si 20:00 (seara) pe ora Olandei
+    if ora not in [8, 20]:
+        return
+        
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
@@ -155,9 +159,10 @@ async def verifica_si_trimite_rezumat(client):
     ''')
     top5 = c.fetchall()
     
-    if len(top5) >= 3: # Trimitem doar daca s-au strans macar 3 stiri importante
-        mesaj = f"📊 **ANALIZA EXCLUSIVĂ: TOP EVENIMENTE ({datetime.now().strftime('%d.%m.%Y - %H:00')})**\n\n"
-        ids_actualizate = []
+        if len(top5) >= 3: # Trimitem doar daca s-au strans macar 3 stiri importante
+            ora_olanda_str = datetime.now(tz_olanda).strftime('%d.%m.%Y - %H:00 (Ora Locală)')
+            mesaj = f"📊 **ANALIZA EXCLUSIVĂ: TOP EVENIMENTE ({ora_olanda_str})**\n\n"
+            ids_actualizate = []
         for i, (text, sursa, score, _id) in enumerate(top5, 1):
             emoji = "🔴" if score >= 9 else "🟠" if score >= 7 else "🟡"
             mesaj += f"{emoji} **{i}.** {text[:180]}...\n   ⭐ Relevanță: {score}/10\n\n"
