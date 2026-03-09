@@ -210,12 +210,20 @@ async def proceseaza_mesaj(client, msg, sursa, texte_vechi_db):
     duplicat = eval_ai.get('duplicat', False)
     text_final = eval_ai.get('text_ro', "")
 
-    # Filtre de respingere rapidă
+    # Filtre de respingere rapidă (MODIFICAT: BYPASS PENTRU NEXTA_LIVE)
     h = hash_text(text_final)
-    if duplicat or stire_existenta(h) or scor < 6 or not text_final:
-        log_event('⏭️ Sărit', f"Scor:{scor} | Dup:{duplicat} | {text_final[:30]}")
+    
+    # 1. Daca stirea e deja in baza noastra de date cu MD5 identic, oprim oricum (sa nu repetam in bucla)
+    if stire_existenta(h) or not text_final:
         if file_to_send and os.path.exists(file_to_send): os.remove(file_to_send)
         return None
+
+    # 2. Daca stirea NU este de la nexta_live, aplicam filtrele dure (Scor >= 6 si Non-Duplicat Semantic)
+    if sursa != "nexta_live":
+        if duplicat or scor < 6:
+            log_event('⏭️ Sărit', f"Scor:{scor} | Dup:{duplicat} | {text_final[:30]}")
+            if file_to_send and os.path.exists(file_to_send): os.remove(file_to_send)
+            return None
 
     # [3] POST-EVALUARE (Acum descărcăm media dacă nu am făcut-o și scorul merită)
     img_generata = None
