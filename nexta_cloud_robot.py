@@ -159,10 +159,10 @@ async def verifica_si_trimite_rezumat(client):
     ''')
     top5 = c.fetchall()
     
-        if len(top5) >= 3: # Trimitem doar daca s-au strans macar 3 stiri importante
-            ora_olanda_str = datetime.now(tz_olanda).strftime('%d.%m.%Y - %H:00 (Ora Locală)')
-            mesaj = f"📊 **ANALIZA EXCLUSIVĂ: TOP EVENIMENTE ({ora_olanda_str})**\n\n"
-            ids_actualizate = []
+    if len(top5) >= 3: # Trimitem doar daca s-au strans macar 3 stiri importante
+        ora_olanda_str = datetime.now(tz_olanda).strftime('%d.%m.%Y - %H:00 (Ora Locală)')
+        mesaj = f"📊 **ANALIZA EXCLUSIVĂ: TOP EVENIMENTE ({ora_olanda_str})**\n\n"
+        ids_actualizate = []
         for i, (text, sursa, score, _id) in enumerate(top5, 1):
             emoji = "🔴" if score >= 9 else "🟠" if score >= 7 else "🟡"
             mesaj += f"{emoji} **{i}.** {text[:180]}...\n   ⭐ Relevanță: {score}/10\n\n"
