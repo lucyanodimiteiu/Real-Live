@@ -1,0 +1,51 @@
+name: 👥 Get Channel Members
+on: workflow_dispatch
+jobs:
+  get_members:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install telethon
+      - name: Run Script
+        env:
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
+        run: |
+          cat << 'PYEOF' > script.py
+          import os, asyncio
+          from telethon import TelegramClient
+          from telethon.sessions import StringSession
+          from telethon.tl.functions.channels import GetFullChannelRequest
+          api_id = os.getenv('API_ID')
+          api_hash = os.getenv('API_HASH')
+          session_string = os.getenv('TELEGRAM_SESSION')
+          try:
+              canal = int(os.getenv('NEXTALIVEROMANIA_ID'))
+          except:
+              canal = os.getenv('NEXTALIVEROMANIA_ID')
+          async def main():
+              client = TelegramClient(StringSession(session_string), int(api_id), api_hash)
+              await client.connect()
+              try:
+                  entity = await client.get_entity(canal)
+                  full = await client(GetFullChannelRequest(channel=entity))
+                  print(f"TOTAL_COUNT:{full.full_chat.participants_count}")
+                  participants = await client.get_participants(entity, limit=200)
+                  print("---MEMBERS---")
+                  for p in participants:
+                      nume = f"{p.first_name or ''} {p.last_name or ''}".strip() or "Anonim/FaraNume"
+                      username = f"@{p.username}" if p.username else "Fara_Username"
+                      print(f"ID:{p.id} | {nume} | {username}")
+              except Exception as e:
+                  print(f"ERROR:{e}")
+              finally:
+                  await client.disconnect()
+          asyncio.run(main())
+          PYEOF
+          python script.py
