@@ -1,0 +1,14 @@
+name: 🗑️ Clear SQLite Cache
+on: workflow_dispatch
+jobs:
+  clear_cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalare GH CLI
+        run: sudo apt-get install gh
+      - name: Clear all caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh extension install actions/gh-actions-cache
+          gh actions-cache delete --all --confirm || echo "No caches to delete"
