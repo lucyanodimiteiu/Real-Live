@@ -43,6 +43,11 @@ def init_db():
                     hash_md5 TEXT UNIQUE, text_scurt TEXT,
                     sursa TEXT, score INTEGER,
                     data_postare TEXT, postat INTEGER DEFAULT 0)''')
+    # Adaugam campul pentru trackerul de rezumat (daca nu exista)
+    try:
+        c.execute('ALTER TABLE stiri ADD COLUMN trimis_rezumat INTEGER DEFAULT 0')
+    except:
+        pass
     conn.commit()
     conn.close()
 
@@ -132,6 +137,47 @@ TEXT IMAGINE: {sursa_img_text[:300]}
     return None
 
 # ==========================================
+# REZUMAT ZILNIC (08:00 și 20:00)
+# ==========================================
+async def verifica_si_trimite_rezumat(client):
+    ora = datetime.utcnow().hour
+    # Fortam trimiterea ACUM pentru ora 20:00, ignorand ora curenta pentru primul test
+    # Pe viitor se va rula automat la 06:00 UTC (08:00 RO) si 18:00 UTC (20:00 RO)
+    
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    # Preia top 5 stiri din ultimele 12 ore (aprox) care n-au mai fost in rezumat
+    c.execute('''
+        SELECT text_scurt, sursa, score, id FROM stiri
+        WHERE postat = 1 AND trimis_rezumat = 0
+        ORDER BY score DESC, data_postare DESC LIMIT 5
+    ''')
+    top5 = c.fetchall()
+    
+    if len(top5) >= 3: # Trimitem doar daca s-au strans macar 3 stiri importante
+        mesaj = f"📊 **ANALIZA EXCLUSIVĂ: TOP EVENIMENTE ({datetime.now().strftime('%d.%m.%Y - %H:00')})**\n\n"
+        ids_actualizate = []
+        for i, (text, sursa, score, _id) in enumerate(top5, 1):
+            emoji = "🔴" if score >= 9 else "🟠" if score >= 7 else "🟡"
+            mesaj += f"{emoji} **{i}.** {text[:180]}...\n   ⭐ Relevanță: {score}/10\n\n"
+            ids_actualizate.append(str(_id))
+        
+        mesaj += f"\n{SEMNATURA}"
+        
+        try:
+            await client.send_message(canal_destinatie, mesaj, parse_mode='md')
+            log_event('📊 Rezumat', 'Top-ul la 12h a fost trimis cu succes')
+            print("✅ Rezumatul Top-urilor trimis!")
+            # Marcăm știrile ca fiind deja 'consumate' pentru rezumatul curent
+            if ids_actualizate:
+                c.execute(f"UPDATE stiri SET trimis_rezumat = 1 WHERE id IN ({','.join(ids_actualizate)})")
+                conn.commit()
+        except Exception as e:
+            log_event('❌ Eroare Rezumat', str(e))
+    conn.close()
+
+# ==========================================
 # CORE LOGIC - PROCESARE ASINCRONĂ & LAZY LOAD
 # ==========================================
 async def proceseaza_mesaj(client, msg, sursa, texte_vechi_db):
@@ -213,6 +259,9 @@ async def main():
     init_db()
     client = TelegramClient(StringSession(session_string), int(api_id), api_hash)
     await client.connect()
+
+    # Apelam functia de top 5 (modificata sa se declanseze fix acum)
+    await verifica_si_trimite_rezumat(client)
 
     conn = sqlite3.connect(DB_PATH)
     texte_vechi_db = [row[0] for row in conn.cursor().execute('SELECT text_scurt FROM stiri ORDER BY id DESC LIMIT 20').fetchall()]
