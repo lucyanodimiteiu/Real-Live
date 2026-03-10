@@ -21,14 +21,14 @@ jobs:
         uses: actions/cache@v3
         with:
           path: stiri.db
-          key: stiri-db-${{ runner.os }}
+          key: stiri-db-${{ github.run_id }}
           restore-keys: stiri-db-
 
       - name: Restore Log (cache intre rulari)
         uses: actions/cache@v3
         with:
           path: bot_log.json
-          key: bot-log-${{ runner.os }}
+          key: bot-log-${{ github.run_id }}
           restore-keys: bot-log-
 
       - name: Set up Python
