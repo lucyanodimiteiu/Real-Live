@@ -108,6 +108,7 @@ async def evalueaza_stire_ai(text_nou, texte_vechi, sursa_img_text="", retry=2):
     sample_vechi = '\n'.join([f"- {t}" for t in texte_vechi[-10:]])
     prompt = f"""
 Ești un AI OSINT ultra-eficient. Analizează ȘTIREA NOUĂ (și opțional textul din imagine).
+Suntem în anul 2026. Donald Trump este actualul președinte al SUA, nu 'fostul'. Nu adăuga cuvântul 'fostul' când te referi la el.
 1. TRADUCE/RESCRIE în limba română (stil Reuters, maxim 3 paragrafe, fără linkuri/atribuiri).
 2. SCORING de la 1 la 10 (importanță geopolitică/urgență/noutate).
 3. DEDUPLICARE: Verifică dacă evenimentul e deja în ȘTIRI VECHI (chiar și rescris). Returnează true/false.
