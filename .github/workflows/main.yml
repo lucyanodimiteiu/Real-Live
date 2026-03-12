@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *' # Am marit la 30 min ca sa nu se bata botii intre ei
+    - cron: '*/30 * * * *' # IMPORTANT: 30 minute pentru a opri dublurile
 
 concurrency:
   group: scraping-nexta
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Necesar pentru a putea face push inapoi
+          fetch-depth: 0 # IMPORTANT: permite salvarea inapoi pe GitHub
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -44,14 +44,15 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python nexta_cloud_robot.py
 
-      - name: 💾 Salvare Memorie Permanentă (Stop Dubluri)
+      - name: 💾 Salvăm Memoria (Commit & Push)
         run: |
           git config --global user.name "Grigore-Bot"
           git config --global user.email "bot@grigore.ai"
-          # Cream fisierele daca lipsesc ca sa nu dea eroare git add
+          # Cream fisierele daca lipsesc
           touch processed_links.txt bot_log.json stiri.db
           git add stiri.db processed_links.txt bot_log.json || true
           git commit -m "Update bot memory: stop duplicates [skip ci]" || true
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
