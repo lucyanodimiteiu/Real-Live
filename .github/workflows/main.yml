@@ -1,10 +1,11 @@
 name: Automatizare Nexta Live Romania - Audio
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/30 * * * *' # Rulăm la 30 min pentru a lăsa timp scriptului să termine
 
 concurrency:
   group: scraping-nexta
@@ -16,20 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Restore SQLite DB (cache intre rulari)
-        uses: actions/cache@v3
         with:
-          path: stiri.db
-          key: stiri-db-${{ github.run_id }}
-          restore-keys: stiri-db-
-
-      - name: Restore Log (cache intre rulari)
-        uses: actions/cache@v3
-        with:
-          path: bot_log.json
-          key: bot-log-${{ github.run_id }}
-          restore-keys: bot-log-
+          fetch-depth: 0 
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -54,3 +43,15 @@ jobs:
           NEXTALIVEROMANIA_ID: ${{ secrets.NEXTALIVEROMANIA_ID }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python nexta_cloud_robot.py
+
+      - name: 💾 Salvare Memorie Permanentă
+        run: |
+          git config --global user.name "Grigore-Bot"
+          git config --global user.email "bot@grigore.ai"
+          # Ne asigurăm că fișierele există înainte de a le adăuga
+          touch processed_links.txt bot_log.json stiri.db
+          git add stiri.db processed_links.txt bot_log.json || true
+          git commit -m "Update memorie bot: stop dubluri [skip ci]" || true
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
