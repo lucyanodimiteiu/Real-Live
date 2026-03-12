@@ -31,9 +31,33 @@ CANALE_SURSA = [
 SEMNATURA = '@real_live_by_luci'
 DB_PATH = 'stiri.db'
 LOG_PATH = 'bot_log.json'
+BLACKLIST_FILE = 'processed_links.txt' # Strategia transplantată
 
 # ==========================================
-# BAZĂ DE DATE SQLite & LOGGING
+# STRATEGIA DE DE-DUPLICARE (FILE-BASED)
+# ==========================================
+def hash_text(text): 
+    return hashlib.md5(text.encode('utf-8')).hexdigest()
+
+def is_blacklisted(h):
+    if not os.path.exists(BLACKLIST_FILE):
+        return False
+    try:
+        with open(BLACKLIST_FILE, 'r', encoding='utf-8') as f:
+            return h in f.read()
+    except Exception as e:
+        log_event('⚠️ Blacklist Read Error', str(e))
+        return False
+
+def add_to_blacklist(h):
+    try:
+        with open(BLACKLIST_FILE, 'a', encoding='utf-8') as f:
+            f.write(h + '\n')
+    except Exception as e:
+        log_event('⚠️ Blacklist Write Error', str(e))
+
+# ==========================================
+# BAZĂ DE DATE SQLite (Pentru Rezumat/Top)
 # ==========================================
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -42,24 +66,10 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     hash_md5 TEXT UNIQUE, text_scurt TEXT,
                     sursa TEXT, score INTEGER,
-                    data_postare TEXT, postat INTEGER DEFAULT 0)''')
-    # Adaugam campul pentru trackerul de rezumat (daca nu exista)
-    try:
-        c.execute('ALTER TABLE stiri ADD COLUMN trimis_rezumat INTEGER DEFAULT 0')
-    except:
-        pass
+                    data_postare TEXT, postat INTEGER DEFAULT 0,
+                    trimis_rezumat INTEGER DEFAULT 0)''')
     conn.commit()
     conn.close()
-
-def hash_text(text): return hashlib.md5(text.encode('utf-8')).hexdigest()
-
-def stire_existenta(hash_md5):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('SELECT id FROM stiri WHERE hash_md5 = ?', (hash_md5,))
-    result = c.fetchone()
-    conn.close()
-    return result is not None
 
 def salveaza_stire(hash_md5, text_scurt, sursa, score):
     conn = sqlite3.connect(DB_PATH)
@@ -100,102 +110,61 @@ async def genereaza_imagine(titlu_stire):
     return None
 
 # ==========================================
-# AI - DEEPSEEK (CONSOLIDAT: Scoring, Traducere, Deduplicare într-un APEL)
+# AI - DEEPSEEK
 # ==========================================
 async def evalueaza_stire_ai(text_nou, texte_vechi, sursa_img_text="", retry=2):
     if not DEEPSEEK_KEY: return None
-    
     sample_vechi = '\n'.join([f"- {t}" for t in texte_vechi[-10:]])
     prompt = f"""
-Ești un AI OSINT ultra-eficient. Analizează ȘTIREA NOUĂ (și opțional textul din imagine).
-Suntem în anul 2026. Donald Trump este actualul președinte al SUA, nu 'fostul'. Nu adăuga cuvântul 'fostul' când te referi la el.
-1. TRADUCE/RESCRIE în limba română (stil Reuters, maxim 3 paragrafe, fără linkuri/atribuiri).
-2. SCORING de la 1 la 10 (importanță geopolitică/urgență/noutate).
-3. DEDUPLICARE: Verifică dacă evenimentul e deja în ȘTIRI VECHI (chiar și rescris). Returnează true/false.
+Ești un AI OSINT ultra-eficient. Analizează ȘTIREA NOUĂ.
+Suntem în anul 2026. Donald Trump este președintele SUA.
+1. TRADUCE/RESCRIE în română (stil Reuters, maxim 3 paragrafe).
+2. SCORING 1-10.
+3. DEDUPLICARE SEMANTICĂ: Returnează true dacă evenimentul e deja în ȘTIRI VECHI.
 
-Răspunde STRICT în format JSON, fără alte comentarii:
-{{"scor": 8, "duplicat": false, "text_ro": "Traducerea finală aici..."}}
+Răspunde JSON: {{"scor": 8, "duplicat": false, "text_ro": "..."}}
 
 ȘTIRE NOUĂ: {text_nou[:600]}
 TEXT IMAGINE: {sursa_img_text[:300]}
 ȘTIRI VECHI: {sample_vechi}
 """
     headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
-    
     for attempt in range(retry):
         try:
             resp = requests.post("https://api.deepseek.com/v1/chat/completions", json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.2,
-                "response_format": {"type": "json_object"}
+                "model": "deepseek-chat", "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2, "response_format": {"type": "json_object"}
             }, headers=headers, timeout=30)
-            content = resp.json()['choices'][0]['message']['content']
-            return json.loads(content)
-        except Exception as e:
-            log_event(f'⚠️ DeepSeek retry {attempt+1}', str(e))
-            if attempt < retry - 1: await asyncio.sleep(2 ** attempt)
+            return resp.json()['choices'][0]['message']['content']
+        except: await asyncio.sleep(2 ** attempt)
     return None
 
 # ==========================================
-# REZUMAT ZILNIC (08:00 și 20:00 - Ora Locală Olanda/CET)
-# ==========================================
-async def verifica_si_trimite_rezumat(client):
-    import pytz
-    tz_olanda = pytz.timezone('Europe/Amsterdam')
-    ora = datetime.now(tz_olanda).hour
-    
-    # Rulam la 08:00 (dimineata) si 20:00 (seara) pe ora Olandei
-    if ora not in [8, 20]:
-        return
-        
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    
-    # Preia top 5 stiri din ultimele 12 ore (aprox) care n-au mai fost in rezumat
-    c.execute('''
-        SELECT text_scurt, sursa, score, id FROM stiri
-        WHERE postat = 1 AND trimis_rezumat = 0
-        ORDER BY score DESC, data_postare DESC LIMIT 5
-    ''')
-    top5 = c.fetchall()
-    
-    if len(top5) >= 3: # Trimitem doar daca s-au strans macar 3 stiri importante
-        ora_olanda_str = datetime.now(tz_olanda).strftime('%d.%m.%Y - %H:00 (Ora Locală)')
-        mesaj = f"📊 **ANALIZA EXCLUSIVĂ: TOP EVENIMENTE ({ora_olanda_str})**\n\n"
-        ids_actualizate = []
-        for i, (text, sursa, score, _id) in enumerate(top5, 1):
-            emoji = "🔴" if score >= 9 else "🟠" if score >= 7 else "🟡"
-            mesaj += f"{emoji} **{i}.** {text[:180]}...\n   ⭐ Relevanță: {score}/10\n\n"
-            ids_actualizate.append(str(_id))
-        
-        mesaj += f"\n{SEMNATURA}"
-        
-        try:
-            await client.send_message(canal_destinatie, mesaj, parse_mode='md')
-            log_event('📊 Rezumat', 'Top-ul la 12h a fost trimis cu succes')
-            print("✅ Rezumatul Top-urilor trimis!")
-            # Marcăm știrile ca fiind deja 'consumate' pentru rezumatul curent
-            if ids_actualizate:
-                c.execute(f"UPDATE stiri SET trimis_rezumat = 1 WHERE id IN ({','.join(ids_actualizate)})")
-                conn.commit()
-        except Exception as e:
-            log_event('❌ Eroare Rezumat', str(e))
-    conn.close()
-
-# ==========================================
-# CORE LOGIC - PROCESARE ASINCRONĂ & LAZY LOAD
+# PROCESARE ASINCRONĂ
 # ==========================================
 async def proceseaza_mesaj(client, msg, sursa, texte_vechi_db):
     if not msg.text and not msg.media: return None
-    
-    # [1] Pre-evaluare brută (LAZY LOAD). NU descărcăm poze/video încă.
+
+    # [1] IDENTIFICATOR UNIC (Adaptat pentru Telegram + Web)
+    unique_id = None
+    if hasattr(msg, 'chat_id') and msg.chat_id and msg.id:
+        unique_id = f"{msg.chat_id}:{msg.id}"
+    elif hasattr(msg, 'link') and msg.link:
+        unique_id = msg.link
+    else:
+        unique_id = (msg.text or "")[:150]
+
+    if not unique_id: return None
+    h = hash_text(unique_id)
+
+    # [2] VERIFICARE BLACKLIST (Strategia Automatizare-Stiri)
+    if is_blacklisted(h):
+        return None # Oprim imediat orice procesare
+
+    # [3] LAZY LOAD & OCR
     text_brut = msg.text or ""
-    
-    # Euristică rapidă: dacă e doar o poză/video fără text (sau foarte scurt), tragem poza pentru OCR.
     text_foto = ""
     file_to_send = None
-    
     if len(text_brut) < 20 and msg.media:
         file_to_send = await msg.download_media()
         if msg.photo and file_to_send:
@@ -206,103 +175,70 @@ async def proceseaza_mesaj(client, msg, sursa, texte_vechi_db):
         if file_to_send and os.path.exists(file_to_send): os.remove(file_to_send)
         return None
 
-    # [2] APEL AI CONSOLIDAT (1 cerere în loc de 3)
-    eval_ai = await evalueaza_stire_ai(text_de_analizat, texte_vechi_db, text_foto)
-    if not eval_ai: 
-        if file_to_send and os.path.exists(file_to_send): os.remove(file_to_send)
-        return None
+    # [4] APEL AI
+    res_raw = await evalueaza_stire_ai(text_de_analizat, texte_vechi_db, text_foto)
+    if not res_raw: return None
+    eval_ai = json.loads(res_raw)
 
     scor = eval_ai.get('scor', 5)
-    duplicat = eval_ai.get('duplicat', False)
+    duplicat_ai = eval_ai.get('duplicat', False)
     text_final = eval_ai.get('text_ro', "")
 
-    # Filtre de respingere rapidă (MODIFICAT: BYPASS PENTRU NEXTA_LIVE)
-    h = hash_text(f"{sursa}:{text_de_analizat[:150]}")
-    
-    # 1. Daca stirea e deja in baza noastra de date cu MD5 identic, oprim oricum (sa nu repetam in bucla)
-    if stire_existenta(h) or not text_final:
-        if file_to_send and os.path.exists(file_to_send): os.remove(file_to_send)
-        return None
-
-    # NOUL BYPASS ABSOLUT (Daca e nexta_live, nu il mai trecem prin evaluarea deepseek de duplicat/scor)
-    if sursa == "nexta_live":
-        # Pentru nexta_live ignoram variabila "duplicat" (care a dat false-positive din cauza deepseek)
-        pass 
-    else:
-        # 2. Daca stirea NU este de la nexta_live, aplicam filtrele dure (Scor >= 6 si Non-Duplicat Semantic)
-        if duplicat or scor < 6:
-            log_event('⏭️ Sărit', f"Scor:{scor} | Dup:{duplicat} | {text_final[:30]}")
+    # Filtre (BYPASS Nexta_Live)
+    if sursa != "nexta_live":
+        if duplicat_ai or scor < 6:
             if file_to_send and os.path.exists(file_to_send): os.remove(file_to_send)
             return None
 
-    # [3] POST-EVALUARE (Acum descărcăm media dacă nu am făcut-o și scorul merită)
+    # [5] MEDIA & POSTARE
     img_generata = None
     if msg.media and not file_to_send:
         file_to_send = await msg.download_media()
     elif not msg.media:
         img_generata = await genereaza_imagine(text_final[:100])
 
-    # Formatare finală
-    emoji_score = "🔴" if scor >= 9 else "🟠" if scor >= 7 else "🟡"
-    caption_final = f"{emoji_score} {text_final}\n\n{SEMNATURA}"
+    caption_final = f"{'🔴' if scor >= 9 else '🟠' if scor >= 7 else '🟡'} {text_final}\n\n{SEMNATURA}"
     media_de_trimis = file_to_send or img_generata
 
     try:
         if media_de_trimis and os.path.exists(media_de_trimis):
-            await client.send_file(canal_destinatie, media_de_trimis, caption=caption_final, supports_streaming=True)
+            await client.send_file(canal_destinatie, media_de_trimis, caption=caption_final)
         else:
             await client.send_message(canal_destinatie, caption_final)
 
+        # SALVARE ÎN BLACKLIST DOAR DUPĂ SUCCES
+        add_to_blacklist(h)
         salveaza_stire(h, text_final, sursa, scor)
         texte_vechi_db.append(text_final[:200])
-        log_event('✅ Postat', f'@{sursa} | Scor: {scor}')
-        print(f"✅ Postat din @{sursa} (scor {scor})")
-        
-        # Anti-flood mic (3s e suficient pe Telegram API dacă nu se dă spam abuziv)
+        print(f"✅ Postat: @{sursa}")
         await asyncio.sleep(3)
         return True
     except Exception as e:
-        log_event('❌ Mesaj Error', str(e))
+        log_event('❌ Post Error', str(e))
     finally:
         for f in [file_to_send, img_generata]:
-            if f and os.path.exists(f): 
-                try: os.remove(f)
-                except: pass
+            if f and os.path.exists(f): os.remove(f)
     return False
 
 # ==========================================
-# MAIN LOOP
+# MAIN
 # ==========================================
 async def main():
     init_db()
     client = TelegramClient(StringSession(session_string), int(api_id), api_hash)
     await client.connect()
 
-    # Apelam functia de top 5 (modificata sa se declanseze fix acum)
-    await verifica_si_trimite_rezumat(client)
-
     conn = sqlite3.connect(DB_PATH)
     texte_vechi_db = [row[0] for row in conn.cursor().execute('SELECT text_scurt FROM stiri ORDER BY id DESC LIMIT 20').fetchall()]
     conn.close()
 
-    stiri_postate = 0
-
     for sursa in CANALE_SURSA:
-        print(f"📡 Scanare: @{sursa}")
         try:
             mesaje = await client.get_messages(sursa, limit=10)
-            
-            # Procesare concurentă limitată: 3 mesaje simultan
-            for i in range(0, len(mesaje), 3):
-                batch = mesaje[i:i+3]
-                tasks = [proceseaza_mesaj(client, m, sursa, texte_vechi_db) for m in batch]
-                rezultate = await asyncio.gather(*tasks, return_exceptions=True)
-                stiri_postate += sum([1 for r in rezultate if r is True])
+            for m in mesaje:
+                await proceseaza_mesaj(client, m, sursa, texte_vechi_db)
+        except Exception as e: log_event('⚠️ Canal', f'@{sursa}: {str(e)}')
 
-        except Exception as e:
-            log_event('⚠️ Canal', f'@{sursa}: {str(e)}')
-
-    print(f"\n🏁 Complet. Postate: {stiri_postate}")
     await client.disconnect()
 
 if __name__ == '__main__':
