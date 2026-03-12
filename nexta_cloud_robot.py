@@ -217,7 +217,7 @@ async def proceseaza_mesaj(client, msg, sursa, texte_vechi_db):
     text_final = eval_ai.get('text_ro', "")
 
     # Filtre de respingere rapidă (MODIFICAT: BYPASS PENTRU NEXTA_LIVE)
-    h = hash_text(text_final)
+    h = hash_text(f"{sursa}:{text_de_analizat[:150]}")
     
     # 1. Daca stirea e deja in baza noastra de date cu MD5 identic, oprim oricum (sa nu repetam in bucla)
     if stire_existenta(h) or not text_final:
