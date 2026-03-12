@@ -1,0 +1,22 @@
+[
+  {
+    "timestamp": "2026-03-12T20:45:07.871118",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-03-12T20:48:38.269928",
+    "tip": "⚠️ Canal",
+    "mesaj": "@nexta_live: Invalid control character at: line 4 column 725 (char 764)"
+  },
+  {
+    "timestamp": "2026-03-12T20:55:26.796963",
+    "tip": "⚠️ Imagine",
+    "mesaj": "HTTPSConnectionPool(host='image.pollinations.ai', port=443): Read timed out. (read timeout=30)"
+  },
+  {
+    "timestamp": "2026-03-12T21:06:50.532550",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  }
+]
