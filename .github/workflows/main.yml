@@ -7,6 +7,10 @@ on:
   schedule:
     - cron: '*/30 * * * *' # IMPORTANT: 30 minute pentru a opri dublurile
 
+# ACEASTA ESTE PIESA LIPSĂ:
+permissions:
+  contents: write
+
 concurrency:
   group: scraping-nexta
   cancel-in-progress: false
@@ -55,4 +59,3 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
