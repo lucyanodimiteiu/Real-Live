@@ -78,5 +78,10 @@
     "timestamp": "2026-03-13T04:53:49.638962",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-03-13T06:02:08.674273",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
   }
 ]
