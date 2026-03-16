@@ -26,7 +26,7 @@ except:
 CANALE_SURSA = [
     'nexta_live', 'TheStudyofWar', 'osintdefender', 
     'mossad_telegram', 'intelslava', 'wartranslated',
-    'bricsnews'
+    'bricsnews', 'nayaforiraq'
 ]
 
 SEMNATURA = '@real_live_by_luci'
