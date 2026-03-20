@@ -1623,5 +1623,25 @@
     "timestamp": "2026-03-20T10:50:36.622743",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-03-20T11:09:24.954618",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-03-20T11:21:10.950748",
+    "tip": "⚠️ Imagine",
+    "mesaj": "HTTPSConnectionPool(host='image.pollinations.ai', port=443): Read timed out. (read timeout=30)"
+  },
+  {
+    "timestamp": "2026-03-20T11:22:50.097185",
+    "tip": "⚠️ Imagine",
+    "mesaj": "HTTPSConnectionPool(host='image.pollinations.ai', port=443): Read timed out. (read timeout=30)"
+  },
+  {
+    "timestamp": "2026-03-20T11:24:16.690396",
+    "tip": "⚠️ Imagine",
+    "mesaj": "HTTPSConnectionPool(host='image.pollinations.ai', port=443): Read timed out. (read timeout=30)"
   }
 ]
