@@ -24,9 +24,7 @@ except:
     canal_destinatie = os.getenv('NEXTALIVEROMANIA_ID')
 
 CANALE_SURSA = [
-    'nexta_live', 'TheStudyofWar', 'osintdefender', 
-    'mossad_telegram', 'intelslava', 'wartranslated',
-    'bricsnews', 'nayaforiraq'
+    'nexta_live', 'bricsnews'
 ]
 
 SEMNATURA = '@real_live_by_luci'
