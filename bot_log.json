@@ -1,20 +1,5 @@
 [
   {
-    "timestamp": "2026-03-24T02:45:02.558911",
-    "tip": "❌ Post Error",
-    "mesaj": "The caption is too long (caused by SendMediaRequest)"
-  },
-  {
-    "timestamp": "2026-03-24T05:01:36.550904",
-    "tip": "❌ Post Error",
-    "mesaj": "The caption is too long (caused by SendMediaRequest)"
-  },
-  {
-    "timestamp": "2026-03-24T05:01:49.317980",
-    "tip": "❌ Post Error",
-    "mesaj": "The caption is too long (caused by SendMediaRequest)"
-  },
-  {
     "timestamp": "2026-03-24T06:12:08.461661",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
@@ -2496,6 +2481,21 @@
   },
   {
     "timestamp": "2026-04-20T08:39:31.983378",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-04-20T10:56:08.951693",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-04-20T11:00:49.564027",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-04-20T11:02:42.105572",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
   }
