@@ -1,10 +1,5 @@
 [
   {
-    "timestamp": "2026-03-27T15:01:04.098918",
-    "tip": "❌ Post Error",
-    "mesaj": "The caption is too long (caused by SendMediaRequest)"
-  },
-  {
     "timestamp": "2026-03-27T17:32:25.777594",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
@@ -2496,6 +2491,11 @@
   },
   {
     "timestamp": "2026-04-23T04:38:09.169976",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
+  },
+  {
+    "timestamp": "2026-04-23T14:27:00.289112",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
   }
