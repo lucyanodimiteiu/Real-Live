@@ -1,10 +1,5 @@
 [
   {
-    "timestamp": "2026-08-15T21:27:11.359858",
-    "tip": "❌ Post Error",
-    "mesaj": "The caption is too long (caused by SendMediaRequest)"
-  },
-  {
     "timestamp": "2026-08-15T21:49:07.589690",
     "tip": "❌ Post Error",
     "mesaj": "The caption is too long (caused by SendMediaRequest)"
@@ -2498,5 +2493,10 @@
     "timestamp": "2026-09-13T17:02:17.464046",
     "tip": "⚠️ Imagine",
     "mesaj": "HTTPSConnectionPool(host='image.pollinations.ai', port=443): Read timed out. (read timeout=30)"
+  },
+  {
+    "timestamp": "2026-09-13T19:18:44.714250",
+    "tip": "❌ Post Error",
+    "mesaj": "The caption is too long (caused by SendMediaRequest)"
   }
 ]
